@@ -41,7 +41,8 @@ class Config:
         if database:
             self.database: Optional[str] = database
         else:
-            self.database = os.environ.get("ROAMRESEARCH_DATABASE")
+            self.database = os.environ["ROAMRESEARCH_DATABASE"]
+        assert self.database, "Please define the Roam database you want to backup."
         self.debug = debug
         self.sleep_duration = sleep_duration
 
@@ -133,7 +134,7 @@ async def _download_rr_archive(document: Page,
     await asyncio.sleep(config.sleep_duration)
 
     async def get_dropdown_button():
-        dropdown_button = await document.querySelector(".bp3-button-text")
+        dropdown_button = await document.querySelector(".bp3-dialog .bp3-button-text")
         assert dropdown_button is not None
         dropdown_button_text = await get_text(document, dropdown_button)
         # Defensive check if the interface change
@@ -147,7 +148,8 @@ async def _download_rr_archive(document: Page,
         logger.debug("Changing output type to {}", output_type)
         await button.click()
         await asyncio.sleep(config.sleep_duration)
-        output_type_elem, = await document.querySelectorAll(".bp3-text-overflow-ellipsis")
+        output_type_elems = await document.querySelectorAll(".bp3-text-overflow-ellipsis")
+        output_type_elem, = [e for e in output_type_elems if await get_text(document, e) == output_type]
         await output_type_elem.click()
 
         # defensive check
